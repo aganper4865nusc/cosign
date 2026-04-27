@@ -1,4 +1,4 @@
-// Copyright 2021 The Sigstore Authors.
+// Copyright 2024 The Sigstore Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,65 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package main is the entry point for the cosign CLI tool.
 package main
 
 import (
-	"context"
-	"errors"
 	"fmt"
-	"log"
 	"os"
-	"strings"
 
-	"github.com/sigstore/cosign/v3/cmd/cosign/cli"
-	cosignError "github.com/sigstore/cosign/v3/cmd/cosign/errors"
-	"github.com/sigstore/cosign/v3/internal/ui"
-
-	// Register the provider-specific plugins
-	_ "github.com/sigstore/sigstore/pkg/signature/kms/aws"
-	_ "github.com/sigstore/sigstore/pkg/signature/kms/azure"
-	_ "github.com/sigstore/sigstore/pkg/signature/kms/gcp"
-	_ "github.com/sigstore/sigstore/pkg/signature/kms/hashivault"
+	"github.com/chainguard-dev/cosign/pkg/commands"
 )
 
 func main() {
-	// Fix up flags to POSIX standard flags.
-	ctx := context.Background()
-	for i, arg := range os.Args {
-		if (strings.HasPrefix(arg, "-") && len(arg) == 2) || (strings.HasPrefix(arg, "--") && len(arg) >= 4) {
-			continue
-		}
-		if strings.HasPrefix(arg, "--") && len(arg) == 3 {
-			// Handle --o, convert to -o
-			newArg := fmt.Sprintf("-%c", arg[2])
-			ui.Warnf(ctx, "the flag %s is deprecated and will be removed in a future release. Please use the flag %s.", arg, newArg)
-			os.Args[i] = newArg
-		} else if strings.HasPrefix(arg, "-") && len(arg) > 1 {
-			// Handle -output, convert to --output
-			newArg := fmt.Sprintf("-%s", arg)
-			newArgType := "flag"
-			if newArg == "--version" {
-				newArg = "version"
-				newArgType = "subcommand"
-			}
-			ui.Warnf(ctx, "the %s flag is deprecated and will be removed in a future release. "+
-				"Please use the %s %s instead.",
-				arg, newArg, newArgType,
-			)
-			os.Args[i] = newArg
-		}
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
 	}
+}
 
-	if err := cli.New().Execute(); err != nil {
-		// if the error is a `CosignError` then we want to use the exit code that
-		// is related to the type of error that has occurred.
-		var cosignError *cosignError.CosignError
-		if errors.As(err, &cosignError) {
-			log.Printf("error during command execution: %v", err)
-			os.Exit(cosignError.ExitCode())
-		}
-
-		// we don't call os.Exit as Fatalf does both PrintF and os.Exit(1)
-		log.Fatalf("error during command execution: %v", err)
-	}
+// run initializes and executes the root CLI command.
+func run() error {
+	cmd := commands.New()
+	return cmd.Execute()
 }
