@@ -24,12 +24,15 @@ import (
 
 func main() {
 	if err := run(); err != nil {
+		// Print error to stderr and exit with a non-zero status code.
+		// Using code 1 as a general error indicator per POSIX convention.
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 }
 
 // run initializes and executes the root CLI command.
+// Separating this from main() makes it easier to test error handling.
 func run() error {
 	cmd := commands.New()
 	return cmd.Execute()
