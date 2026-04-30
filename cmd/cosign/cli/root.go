@@ -50,7 +50,8 @@ For more information, visit https://sigstore.dev`,
 	}
 
 	// Persistent flags available to all subcommands.
-	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "warn",
+	// Changed default log level from "warn" to "info" for more verbose output during personal use.
+	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info",
 		"Log level (debug, info, warn, error)")
 
 	// Register subcommands.
